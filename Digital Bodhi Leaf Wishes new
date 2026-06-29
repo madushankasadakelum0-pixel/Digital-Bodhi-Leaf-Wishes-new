@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Bodhi Leaf Wishes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Sinhala:wght@400;700&family=Playfair+Display:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Serif Sinhala', serif;
+        }
+        .title-font {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .leaf {
+            position: absolute;
+            width: 130px;
+            height: 170px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #166534, #4ade80);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            color: white;
+            text-align: center;
+            padding: 12px;
+            box-shadow: 0 15px 35px -10px rgb(0 0 0 / 0.5);
+            transform: rotate(var(--rotate));
+            transition: all 3.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+            cursor: pointer;
+        }
+
+        .leaf-veins {
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,0.25) 6px, rgba(255,255,255,0.25) 10px);
+            border-radius: inherit;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-emerald-950 via-green-950 to-emerald-950 text-white min-h-screen">
+
+    <div class="max-w-6xl mx-auto p-6">
+        <div class="text-center py-12">
+            <h1 class="title-font text-6xl md:text-7xl font-bold text-emerald-100 flex items-center justify-center gap-4">
+                🌿 බෝධි පත්‍ර
+            </h1>
+            <p class="text-emerald-300 text-2xl mt-3">Digital Bodhi Leaf Wishes</p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-10">
+            <!-- Wish Form -->
+            <div class="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-emerald-300/20">
+                <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+                    <i class="fa-solid fa-pen-nib"></i> ඔබේ සුභ පැතුම ලියන්න
+                </h2>
+                
+                <input id="nameInput" type="text" placeholder="ඔබේ නම" 
+                       class="w-full bg-white/10 border border-emerald-300/30 rounded-2xl px-6 py-4 text-lg mb-4 focus:outline-none focus:border-emerald-400">
+                
+                <textarea id="wishInput" rows="6" placeholder="ඔබේ සුභ පැතුම මෙහි ලියන්න..."
+                          class="w-full bg-white/10 border border-emerald-300/30 rounded-3xl px-6 py-5 text-lg resize-none focus:outline-none focus:border-emerald-400"></textarea>
+                
+                <button onclick="publishWish()" 
+                        class="mt-8 w-full bg-emerald-600 hover:bg-emerald-500 active:scale-95 transition-all py-5 rounded-2xl text-xl font-medium flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-leaf"></i>
+                    ප්‍රකාශ කරන්න
+                </button>
+            </div>
+
+            <!-- Bodhi Tree -->
+            <div class="flex flex-col items-center">
+                <div id="treeArea" class="relative w-[380px] h-[420px] flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="text-9xl mb-4">🌳</div>
+                        <p class="text-emerald-300 text-2xl">බෝධි වෘක්ෂය</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Published Wishes -->
+        <div class="mt-16">
+            <h2 class="text-2xl font-semibold mb-6 text-emerald-100">🌿 ප්‍රකාශ කළ සුභ පැතුම්</h2>
+            <div id="wishesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </div>
+
+    <!-- Download Modal -->
+    <div id="downloadModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="bg-emerald-900 rounded-3xl p-10 max-w-md w-full mx-4 text-center" id="cardPreview">
+            <div class="mb-8">
+                <h3 id="modalName" class="text-3xl font-bold text-emerald-100"></h3>
+                <p id="modalWish" class="text-emerald-200 mt-6 text-lg leading-relaxed"></p>
+            </div>
+            <div class="flex gap-4 justify-center">
+                <button onclick="closeModal()" 
+                        class="px-8 py-3 rounded-2xl border border-emerald-400/50 hover:bg-white/10 transition-colors">
+                    වසන්න
+                </button>
+                <button onclick="downloadCard()" 
+                        class="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-2xl transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-download"></i> ඩවුන්ලෝඩ් කරන්න
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let wishes = JSON.parse(localStorage.getItem('bodhiWishes')) || [];
+
+        function saveWishes() {
+            localStorage.setItem('bodhiWishes', JSON.stringify(wishes));
+        }
+
+        function createFloatingLeaf(wish) {
+            const leaf = document.createElement('div');
+            leaf.className = 'leaf';
+            leaf.style.left = (Math.random() * 60 + 20) + '%';
+            leaf.style.top = '-100px';
+            leaf.style.setProperty('--rotate', (Math.random() * 50 - 25) + 'deg');
+            
+            leaf.innerHTML = `
+                <div class="leaf-veins"></div>
+                <div class="relative z-10 text-center text-[13px] leading-tight px-2">
+                    <div class="font-medium">${wish.name}</div>
+                    <div class="mt-2 opacity-95 line-clamp-4">${wish.message}</div>
+                </div>
+            `;
+            
+            document.getElementById('treeArea').appendChild(leaf);
+
+            setTimeout(() => {
+                leaf.style.top = (80 + Math.random() * 140) + 'px';
+                leaf.style.left = (Math.random() * 65 + 18) + '%';
+            }, 50);
+
+            setTimeout(() => leaf.style.opacity = '0.35', 7000);
+        }
+
+        function publishWish() {
+            const name = document.getElementById('nameInput').value.trim() || "අනන්‍ය බෝධි";
+            const message = document.getElementById('wishInput').value.trim();
+
+            if (!message) {
+                alert("කරුණාකර සුභ පැතුමක් ලියන්න 🌿");
+                return;
+            }
+
+            const newWish = {
+                id: Date.now(),
+                name: name,
+                message: message
+            };
+
+            wishes.unshift(newWish);
+            saveWishes();
+            createFloatingLeaf(newWish);
+            renderWishes();
+
+            document.getElementById('nameInput').value = '';
+            document.getElementById('wishInput').value = '';
+
+            alert("🌿 ඔබේ සුභ පැතුම බෝධි වෘක්ෂයට එකතු විය!");
+        }
+
+        function renderWishes() {
+            const container = document.getElementById('wishesList');
+            container.innerHTML = '';
+
+            wishes.forEach(wish => {
+                const div = document.createElement('div');
+                div.className = "bg-white/10 backdrop-blur-lg border border-emerald-300/20 rounded-3xl p-6 hover:border-emerald-400 transition-all";
+                div.innerHTML = `
+                    <div class="flex gap-4">
+                        <span class="text-4xl">🌿</span>
+                        <div>
+                            <p class="font-medium text-emerald-100">${wish.name}</p>
+                            <p class="text-emerald-200 mt-3 text-sm leading-relaxed">${wish.message}</p>
+                            <button onclick="showDownloadModal(${wish.id}); event.stopImmediatePropagation()" 
+                                    class="mt-5 text-xs px-5 py-2.5 bg-emerald-700 hover:bg-emerald-600 rounded-2xl transition-colors">
+                                📥 කාඩ් එක ඩවුන්ලෝඩ්
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function showDownloadModal(id) {
+            const wish = wishes.find(w => w.id === id);
+            if (!wish) return;
+
+            document.getElementById('modalName').textContent = wish.name;
+            document.getElementById('modalWish').textContent = wish.message;
+            document.getElementById('downloadModal').classList.remove('hidden');
+            window.currentWishId = id;
+        }
+
+        function closeModal() {
+            document.getElementById('downloadModal').classList.add('hidden');
+        }
+
+        async function downloadCard() {
+            const preview = document.getElementById('cardPreview');
+            const canvas = await html2canvas(preview, { scale: 2, backgroundColor: "#052e16" });
+            
+            const link = document.createElement('a');
+            link.download = `bodhi-wish-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            
+            closeModal();
+        }
+
+        // Initialize
+        window.onload = () => {
+            renderWishes();
+            wishes.slice(0, 8).forEach(wish => {
+                if (Math.random() > 0.3) createFloatingLeaf(wish);
+            });
+        };
+    </script>
+</body>
+</html>
